@@ -52,6 +52,7 @@ enum ofxAAAlgorithm{
     STRONG_PEAK,
     STRONG_DECAY,
     SPECTRUM,
+    ENVELOPE,
     MEL_BANDS,
     MFCC,
     HPCP,

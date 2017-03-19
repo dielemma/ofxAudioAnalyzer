@@ -128,6 +128,7 @@ private:
     ofxAABaseAlgorithm strongDecay;
     
     ofxAAOneVectorOutputAlgorithm spectrum;
+    ofxAAOneVectorOutputAlgorithm envelope;
     ofxAAOneVectorOutputAlgorithm melBands;
     ofxAAOneVectorOutputAlgorithm dct;//MFCC
     ofxAAOneVectorOutputAlgorithm hpcp;

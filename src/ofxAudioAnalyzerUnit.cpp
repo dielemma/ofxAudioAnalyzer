@@ -59,6 +59,7 @@ void ofxAudioAnalyzerUnit::setup(int sampleRate, int bufferSize){
     strongDecay.init();
     
     spectrum.initAndAssignSize((bufferSize/2)+1, 0.0);
+    envelope.initAndAssignSize(bufferSize, 0.0);
     melBands.initAndAssignSize(MELBANDS_BANDS_NUM,0);
     dct.initAndAssignSize(DCT_COEFF_NUM, 0);
     hpcp.initAndAssignSize(HPCP_SIZE, 0);
@@ -115,6 +116,8 @@ void ofxAudioAnalyzerUnit::setup(int sampleRate, int bufferSize){
 
     spectrum.algorithm = factory.create("Spectrum",
                                    "size", _framesize);
+    
+    envelope.algorithm = factory.create("Envelope", "size", _framesize);
 
     hfc.algorithm = factory.create("HFC", "sampleRate", _samplerate);
 
@@ -214,6 +217,9 @@ void ofxAudioAnalyzerUnit::setup(int sampleRate, int bufferSize){
     //Spectrum
     spectrum.algorithm->input("frame").set(window.realValues);
     spectrum.algorithm->output("spectrum").set(spectrum.realValues);
+    //Envelope
+    envelope.algorithm->input("frame").set(window.realValues);
+    envelope.algorithm->output("envelope").set(envelope.realValues);
     //HFC
     hfc.algorithm->input("spectrum").set(spectrum.realValues);
     hfc.algorithm->output("hfc").set(hfc.realValue);
@@ -324,6 +330,10 @@ void ofxAudioAnalyzerUnit::analyze(const vector<float> & inBuffer){
     //spectrum must always be computed as it is neede for other algorithms
     spectrum.algorithm->compute();
     
+    if(envelope.getIsActive()){
+        envelope.compute();
+    }
+    
     hfc.compute();
     pitchSalience.compute();
     pitchDetect.compute();
@@ -366,6 +376,8 @@ void ofxAudioAnalyzerUnit::analyze(const vector<float> & inBuffer){
     #pragma mark -Cast results to float
     
     spectrum.castValuesToFloat(true);
+    
+    envelope.castValuesToFloat(false);
     
     rms.castValueToFloat();
     energy.castValueToFloat();
@@ -411,6 +423,7 @@ void ofxAudioAnalyzerUnit::exit(){
     power.deleteAlgorithm();
     window.deleteAlgorithm();;
     spectrum.deleteAlgorithm();
+    envelope.deleteAlgorithm();
     spectralPeaks.deleteAlgorithm();;
     pitchDetect.deleteAlgorithm();
     pitchSalience.deleteAlgorithm();
@@ -479,6 +492,9 @@ void ofxAudioAnalyzerUnit::setActive(ofxAAAlgorithm algorithm, bool state){
             break;
         case SPECTRUM:
             ofLogWarning()<<"ofxAudioAnalyzerUnit: Spectrum Algorithm cant be turned off.";
+            break;
+        case ENVELOPE:
+            envelope.setActive(state);
             break;
         case MEL_BANDS:
             melBands.setActive(state);
@@ -567,6 +583,9 @@ bool ofxAudioAnalyzerUnit::getIsActive(ofxAAAlgorithm algorithm){
             break;
         case SPECTRUM:
             ofLogWarning()<<"ofxAudioAnalyzerUnit: Spectrum Algorithm cant be turned off.";
+            break;
+        case ENVELOPE:
+            return envelope.getIsActive();
             break;
         case MEL_BANDS:
             return melBands.getIsActive();
@@ -771,6 +790,10 @@ vector<float>& ofxAudioAnalyzerUnit::getValues(ofxAAAlgorithm algorithm, float s
         
         case SPECTRUM:
             return smooth ? spectrum.getSmoothedValues(smooth) : spectrum.getValues();
+            break;
+            
+        case ENVELOPE:
+            return smooth ? envelope.getSmoothedValues(smooth) : envelope.getValues();
             break;
             
         case MEL_BANDS:
